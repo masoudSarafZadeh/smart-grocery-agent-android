@@ -28,5 +28,5 @@ data class LangServeConfig(
 @Serializable
 data class ConfigurableFields(
     @SerialName("thread_id")
-    val threadId: String // شناسه‌ای که چک‌پوینتر پایتون به دنبال آن است
+    val threadId: String
 )
