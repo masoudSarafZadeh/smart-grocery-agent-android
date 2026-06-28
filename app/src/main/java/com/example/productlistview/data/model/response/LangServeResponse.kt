@@ -36,17 +36,12 @@ data class OutputState(
 @Serializable
 data class ResponseMessage(
     val type: String,
-    // We use JsonElement to capture both raw text and complex JSON tools components cleanly
     val content: JsonElement? = null
 ) {
-    /**
-     * Helper property to safely extract textual response text for Chat UI
-     * without crashing on structural tool blocks.
-     */
     val textContent: String
         get() = when {
             content == null -> ""
-            content.toString().startsWith("[") || content.toString().startsWith("{") -> "" // Skip structural tool data
-            else -> content.jsonPrimitive.content // Extract actual message content
+            content.toString().startsWith("[") || content.toString().startsWith("{") -> ""
+            else -> content.jsonPrimitive.content
         }
 }
