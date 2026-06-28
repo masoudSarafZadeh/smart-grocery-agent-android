@@ -28,9 +28,7 @@ sealed interface AiStreamEvent {
     data class Error(val message: String) : AiStreamEvent
     object Done : AiStreamEvent
 }
-class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepository , private val supabaseClient: SupabaseClient) : ViewModel() {
-    //private val _uiState = MutableStateFlow<List<ProductsUiState>>(Datasource().loadProducts())
-    //val uiState: StateFlow<List<ProductsUiState>> = _uiState.asStateFlow()
+class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepository) : ViewModel() {
 
     private val _internetUiState = MutableStateFlow(ProductsUiState())
     val internetUiState: StateFlow<ProductsUiState> = _internetUiState.asStateFlow()
@@ -38,46 +36,6 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages.asStateFlow()
     private val chatSessionThreadId: String = UUID.randomUUID().toString()
-
-    /*var instruments by mutableStateOf<List<InternetPhoto>>(listOf())
-        private set*/
-
-    /*init {
-        getProductsPhotos()
-    }*/
-
-
-
-
-    /*fun updateCount(index: Int, newCount: Int) {
-        _uiState.update { currentList ->
-            currentList.map { product ->
-                // If this is the product we clicked, copy it with the new count
-                if (product.id == index) {
-                    product.copy(count = newCount)
-                } else {
-                    product
-                }
-            }
-        }
-    }
-
-    fun toggleExpand(productId: Int) {
-        _uiState.update { currentList ->
-            currentList.map { product ->
-                if (product.id == productId) {
-                    // Toggle the boolean and reset count if collapsing
-                    val newExpandState = !product.isExpanded
-                    product.copy(
-                        isExpanded = newExpandState,
-                        count = if (newExpandState) 1 else 0
-                    )
-                } else {
-                    product
-                }
-            }
-        }
-    }*/
 
     fun updateInternetCount(photoId: Int, newCount: Int) {
         _chatMessages.update { messages ->
@@ -125,54 +83,7 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
         }
     }
 
-    /*fun sendMessageToAiStreaming(userQuery: String) {
-        if (userQuery.isBlank()) return
 
-        viewModelScope.launch {
-            // 1. Add the user's message to the board
-            _chatMessages.update { currentList ->
-                currentList + ChatMessage(text = userQuery, isUser = true)
-            }
-
-            // 2. Insert a temporary blank placeholder message for the AI response
-            val aiMessageId = java.util.UUID.randomUUID().toString()
-            _chatMessages.update { currentList ->
-                currentList + ChatMessage(id = aiMessageId, text = "Thinking...", isUser = false)
-            }
-
-            try {
-                var streamingAccumulator = ""
-
-                // 3. Collect tokens live from the cloud container
-                productsPhotosRepository.askAiAgentStream(userQuery).collect { chunk ->
-                    // Clean or parse your chunk formatting here if your LangGraph returns JSON packets
-                    streamingAccumulator += chunk
-
-                    // 4. Continually swap out the placeholder text with the newest accumulated string
-                    _chatMessages.update { currentList ->
-                        currentList.map { message ->
-                            if (message.id == aiMessageId) {
-                                message.copy(text = streamingAccumulator)
-                            } else {
-                                message
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("StreamingError", "Failed to collect live stream", e)
-                _chatMessages.update { currentList ->
-                    currentList.map { message ->
-                        if (message.id == aiMessageId) {
-                            message.copy(text = "Error connecting to service.")
-                        } else {
-                            message
-                        }
-                    }
-                }
-            }
-        }
-    }*/
     // 💡 ۲. تابع جدید برای ارسال پیام کاربر به سرور هوش مصنوعی و دریافت پاسخ دوگانه
     fun sendMessageToAi(userQuery: String) {
         if (userQuery.isBlank()) return
@@ -193,7 +104,6 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
                     isError = false
                 )
             }
-            //delay(1500)
             productsPhotosRepository.askAiAgentStream(userQuery, chatSessionThreadId)
                 .collect { event ->
                     when (event) {
@@ -237,53 +147,6 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
                         }
                     }
                 }
-
-            /*try {
-                val response: LangServeResponse = productsPhotosRepository.askAiAgent(userQuery,
-                    chatThreadId = chatSessionThreadId)
-                //val response = getMockAiResponse()
-                // نمونه داده شبیه‌سازی شده بر اساس خروجی واقعی پایتون شما:
-                val outputMessages = response.output.messages
-                val llmResponseText = outputMessages.lastOrNull { it.type == "ai" }?.textContent
-                    ?: "خطا در دریافت پاسخ متنی."
-
-                // 3. Extract the database map safely
-                val productsFromDb = response.output.rawDbData ?: emptyMap()
-                productsFromDb.forEach { (category, productList) ->
-                    productList.forEach { product ->
-                        Log.d("AiImageDebug", "📦 Product: ${product.productName} -> URL: ${product.image}")
-                    }
-                }
-
-                val uiDbProductStates: Map<String, List<InternetProductsItemState>> = productsFromDb.mapValues { entry ->
-                    entry.value.map { product ->
-                        InternetProductsItemState(product = product)
-                    }
-                }
-                // ج) اضافه کردن پاسخ متنی هوش مصنوعی به چت روم
-                _chatMessages.update { currentMessages ->
-                    currentMessages + ChatMessage(text = llmResponseText, isUser = false)
-                }
-
-                // هـ) به روز رسانی لیست محصولات در پایین صفحه چت
-                _internetUiState.update { currentState ->
-                    currentState.copy(
-                        items = uiDbProductStates,
-                        isInitialLoading = false,
-                        isLoadingNewMessage = false,
-                        isError = false
-                    )
-                }
-
-            } catch (e: Exception) {
-                Log.e("AiChatError", "تعامل با پایتون با خطا مواجه شد", e)
-                _internetUiState.update { it.copy(isError = true, isInitialLoading = false, isLoadingNewMessage = false) }
-
-                // پیام خطای سیستم به کاربر در چت باکس
-                _chatMessages.update { currentMessages ->
-                    currentMessages + ChatMessage(text = "خطا در برقراری ارتباط با دستیار فروشگاه.", isUser = false)
-                }
-            }*/
         }
     }
     private fun updateAiMessage(messageId: String, update: (ChatMessage) -> ChatMessage) {
@@ -294,193 +157,14 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
         }
     }
 
-    /*fun getProductsPhotos() {
-        viewModelScope.launch {
-            internetUiState = InternetUiState.Loading
-            internetUiState = try {
-                val result = productsPhotosRepository.getProductsPhotos()
-                InternetUiState.Success(result)
-            } catch (e: IOException) {
-                InternetUiState.Error
-            }catch (e: HttpException) {
-                InternetUiState.Error
-            }
-        }
-    }*/
-    /*fun getSupabasePhotos(searchQuery: String? = null) {
-        viewModelScope.launch {
-            _internetUiState.value = InternetUiState.Loading
-            try {
-                val result = supabaseClient.from("goods")
-                    .select {
-                        // Apply filtering conditionally if searchQuery is not null/empty
-                        if (!searchQuery.isNullOrBlank()) {
-                            filter {
-                                // Looks for matches anywhere in the product name
-                                ilike("product_name", "%$searchQuery%")
-                            }
-                        }
-                        // Keep things fast by limiting results
-                        limit(20)
-                    }.decodeList<InternetProducts>()
-                val uiProductStates = result.map { product ->
-                    InternetProductsItemState(product = product)
-                }
-                _internetUiState.value = InternetUiState.Success(uiProductStates)
-            } catch (e: Exception) {
-                // This catches Ktor network failures, Supabase API errors, and serialization crashes
-                Log.e("SupabaseError", "Failed to fetch photos", e)
-                _internetUiState.value = InternetUiState.Error
-            }
-        }
-    }
-
-    // Add this function to handle dynamic UI searches
-    fun searchProducts(query: String) {
-        getSupabasePhotos(query)
-    }*/
-
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as ProductsApplication)
                 val productsPhotosRepository = application.container.productsPhotosRepository
-                val supabaseClient = application.container.supabaseClient
-                ProductsViewModel(productsPhotosRepository = productsPhotosRepository , supabaseClient = supabaseClient)
+                ProductsViewModel(productsPhotosRepository = productsPhotosRepository)
             }
         }
     }
 
 }
-
-
-/*fun getMockAiResponse(): AiResponse {
-    val mockOilList = listOf(
-        InternetProducts(
-            id = 60,
-            productName = "روغن مایع سرخ کردنی بدون پالم",
-            brand = "بهار الماس",
-            weight = 810,
-            price = 79000,
-            priceAfterOff = 79000,
-            offPercent = 0,
-            llmGuide = "recommended",
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/baharalmas_810.png"
-        ),
-        InternetProducts(
-            id = 53,
-            productName = "روغن مایع سرخ کردنی کنجدو کانولا و ذرت تصفیه شده",
-            brand = "داتیس",
-            weight = 1800,
-            price = 956900,
-            priceAfterOff = 956900,
-            offPercent = 0,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/datis_konjed_1500.png"
-        ),
-        InternetProducts(
-            id = 54,
-            productName = "روغن مایع کنجد تصفیه شده",
-            brand = "داتیس",
-            weight = 900,
-            price = 858200,
-            priceAfterOff = 858200,
-            offPercent = 0,
-            llmGuide = "best quality",
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/datis_konjed_900.png"
-        ),
-        InternetProducts(
-            id = 56,
-            productName = "روغن مایع سرخ کردنی کنجد و کانولا و آفتابگردان تصفیه شده",
-            brand = "داتیس",
-            weight = 1800,
-            price = 820900,
-            priceAfterOff = 820900,
-            offPercent = 0,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/datis_konjed_1500.png"
-        ),
-        InternetProducts(
-            id = 55,
-            productName = "روغن مایع سرخ کردنی زیتون",
-            brand = "امگانو",
-            weight = 1800,
-            price = 669900,
-            priceAfterOff = 596211,
-            offPercent = 11,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/omegano_zeyton_1800.png"
-        )
-    )
-
-    val mockTomatoPasteList = listOf(
-        InternetProducts(
-            id = 6,
-            productName = "رب گوجه قوطی",
-            brand = "خرم",
-            weight = 800,
-            price = 99800,
-            priceAfterOff = 71856,
-            offPercent = 28,
-            llmGuide = "recommended",
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/khoram.png"
-        ),
-        InternetProducts(
-            id = 16,
-            productName = "رب گوجه شیشه ای",
-            brand = "سحر",
-            weight = 1550,
-            price = 248000,
-            priceAfterOff = 230640,
-            offPercent = 7,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/sahar_1550_sh.png"
-        ),
-        InternetProducts(
-            id = 19,
-            productName = "رب گوجه شیشه ای",
-            brand = "خوشبخت",
-            weight = 1500,
-            price = 181000,
-            priceAfterOff = 175570,
-            offPercent = 3,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/khoshbakht_1500_sh.png"
-        ),
-        InternetProducts(
-            id = 10,
-            productName = "رب گوجه شیشه ای",
-            brand = "سیبون",
-            weight = 1500,
-            price = 188000,
-            priceAfterOff = 165440,
-            offPercent = 12,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/sibon_1500_sh.png"
-        ),
-        InternetProducts(
-            id = 22,
-            productName = "رب گوجه شیشه ای",
-            brand = "مکنزی",
-            weight = 1500,
-            price = 181000,
-            priceAfterOff = 162900,
-            offPercent = 10,
-            llmGuide = null,
-            image = "https://opukeehrojxzniygycpw.supabase.co/storage/v1/object/sign/pictures/makenzi_1500_sh.png"
-        )
-    )
-
-    val mockTextResponse = "سلام! برای روغن و رب گوجه دو گزینهٔ بسیار مناسب داریم:\n\n" +
-            "- **روغن مایع سرخ کردنی بدون پالم – برند بهار الماس** (وزن 810 گرم، قیمت 79 000 تومان) با ویژگی *recommended*؛ یعنی ترکیبی عالی از کیفیت خوب و قیمت مناسب، مناسب برای سرخ کردن روزانه.\n\n" +
-            "- **رب گوجه قوطی – برند خرم** (وزن 800 گرم، قیمت 71 856 تومان) هم به‌صورت *recommended* برگزیده شده است؛ طعمی غنی و قیمت‌جذب‌کننده که برای آشپزی‌های خانگی عالی است.\n\n" +
-            "هر دو محصول هم‌اکنون در دسترس هستند و می‌توانید به‌راحتی به سبد خرید اضافه کنید. 🍳🍅"
-
-    return AiResponse(
-        llm_response = mockTextResponse,
-        products = mapOf(
-            "روغن" to mockOilList,
-            "رب گوجه" to mockTomatoPasteList
-        )
-    )
-}*/
