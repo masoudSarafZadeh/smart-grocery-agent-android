@@ -8,12 +8,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.productlistview.ProductsApplication
-import com.example.productlistview.data.repository.ProductsPhotosRepository
 import com.example.productlistview.data.model.chat.ChatMessage
-import com.example.productlistview.data.model.response.InternetProducts
 import com.example.productlistview.data.model.chat.InternetProductsItemState
-import com.example.productlistview.ui.screens.products.ProductsUiState
-import io.github.jan.supabase.SupabaseClient
+import com.example.productlistview.data.model.response.InternetProducts
+import com.example.productlistview.data.repository.ProductsPhotosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,9 +20,9 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 sealed interface AiStreamEvent {
-    data class StatusUpdate(val status: String) : AiStreamEvent // برای "در حال جستجو..."
-    data class TokenReceived(val token: String) : AiStreamEvent // برای استریم کلمات
-    data class DataReceived(val rawDbData: Map<String, List<InternetProducts>>) : AiStreamEvent // داده‌های دیتابیس
+    data class StatusUpdate(val status: String) : AiStreamEvent
+    data class TokenReceived(val token: String) : AiStreamEvent
+    data class DataReceived(val rawDbData: Map<String, List<InternetProducts>>) : AiStreamEvent
     data class Error(val message: String) : AiStreamEvent
     object Done : AiStreamEvent
 }
@@ -41,7 +39,6 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
         _chatMessages.update { messages ->
             messages.map { msg ->
                 if (msg.products.isNotEmpty()) {
-                    // ۱. ایجاد مپ جدید با تغییر کانت کالا
                     val updatedMap = msg.products.mapValues { entry ->
                         entry.value.map { item ->
                             if (item.product.id == photoId) {
@@ -51,7 +48,6 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
                             }
                         }
                     }
-                    // ۲. 🟢 ریترن کردن یک کپی کاملاً جدید از کل استیت به همراه مپ آپدیت شده
                     msg.copy(products = updatedMap)
                 } else {
                     msg
@@ -79,15 +75,12 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
                     msg
                 }
             }
-
         }
     }
 
-
-    // 💡 ۲. تابع جدید برای ارسال پیام کاربر به سرور هوش مصنوعی و دریافت پاسخ دوگانه
     fun sendMessageToAi(userQuery: String) {
         if (userQuery.isBlank()) return
-
+        
         viewModelScope.launch {
             val aiMessageId = UUID.randomUUID().toString()
             _chatMessages.update { current ->
@@ -99,8 +92,8 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
 
             _internetUiState.update { currentState ->
                 currentState.copy(
-                    isInitialLoading = true, // اگر بار اول است لودینگ اصلی
-                    isLoadingNewMessage = false, // اگر کالا داریم، فقط پرچم فرعی
+                    isInitialLoading = true,
+                    isLoadingNewMessage = false,
                     isError = false
                 )
             }
@@ -117,13 +110,11 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
                                     isLoadingNewMessage = false
                                 )
                             }
-                            // اتصال کلمات جدید به انتهای پیام
                             updateAiMessage(aiMessageId) {
                                 it.copy(text = it.text + event.token, statusMessage = null)
                             }
                         }
                         is AiStreamEvent.DataReceived -> {
-                            // تبدیل دیتای خام به State کلاس‌ها و آپدیت محصولات
                             val uiDbProductStates = event.rawDbData.mapValues { entry ->
                                 entry.value.map { InternetProductsItemState(product = it) }
                             }
@@ -166,5 +157,4 @@ class ProductsViewModel(private val productsPhotosRepository: ProductsPhotosRepo
             }
         }
     }
-
 }
