@@ -23,22 +23,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.productlistview.R
-// import com.example.productlistview.ui.theme.ProductListViewTheme // Uncomment if needed
 
 @Composable
 fun IntroduceScreen(
     onStartButtonClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // State for animation trigger
     var visible by remember { mutableStateOf(false) }
 
-    // Trigger animation when screen launches
     LaunchedEffect(Unit) {
         visible = true
     }
 
-    // Modern Gradient Background
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -58,8 +54,6 @@ fun IntroduceScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
-            // 1. Profile Image with Animation
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(2000)) +
@@ -79,7 +73,6 @@ fun IntroduceScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. Name and Title
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(2400))
@@ -104,7 +97,6 @@ fun IntroduceScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 3. Contact Info Card
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(2600)) +
@@ -131,7 +123,7 @@ fun IntroduceScreen(
                         )
                         ContactRow(
                             iconResId = R.drawable.email_icon_119,
-                            text = "masoudsarafzadeh@gmail.com" // Removed extra @
+                            text = "masoudsarafzadeh@gmail.com"
                         )
                     }
                 }
@@ -139,7 +131,6 @@ fun IntroduceScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // 4. Action Button
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(3000))
@@ -165,7 +156,6 @@ fun IntroduceScreen(
     }
 }
 
-// Helper Composable to avoid code duplication
 @Composable
 fun ContactRow(iconResId: Int, text: String) {
     Row(
