@@ -88,12 +88,12 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.productlistview.data.model.chat.ChatMessage
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 
 @Composable
 fun ProductsScreen(contentPadding: PaddingValues,
                    productsViewModel: ProductsViewModel,
-                   //retryAction: () -> Unit
                    onCheckoutClick: () -> Unit
 ) {
 
@@ -108,7 +108,6 @@ fun ProductsScreen(contentPadding: PaddingValues,
             onSendMessage = { query ->
                 productsViewModel.sendMessageToAi(query)
             },
-
             modifier = Modifier.weight(1f),
             onCheckoutClick = onCheckoutClick
         )
@@ -126,11 +125,10 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
 
 @Composable
 fun ErrorScreen(
-    //retryAction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize(), // Added fillMaxSize to center it on screen
+        modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -160,24 +158,26 @@ fun ChatSection(
         messages.flatMap { it.products.values.flatten().filter { it.count > 0 } }
     }
     val hasExpandedItems = selectedProducts.isNotEmpty()
+    val listState = rememberLazyListState()
+    LaunchedEffect(messages.size, messages.lastOrNull()?.text?.length, messages.lastOrNull()?.statusMessage) {
+        if (messages.isNotEmpty()) {
+            listState.animateScrollToItem(messages.size - 1)
+        }
+    }
 
-    // 🟢 جایگزینی Scaffold سوم با یک Column ساده و هوشمند
     Column(
         modifier = modifier
             .fillMaxSize()
-            //.navigationBarsPadding()
-            // 🟢 این دستور به کامپوز می‌گوید با باز شدن کیبورد، کل این ستون را به نرمی بالا بکش
             .imePadding()
     ) {
-        // ۱. لیست اصلی چت
         LazyColumn(
+            state = listState,
             modifier = Modifier
-                .weight(1f) // 🟢 وزن ۱ باعث می‌شود چت کل فضای خالی را بگیرد و باکس متن را به پایین هل دهد
+                .weight(1f)
                 .fillMaxWidth(),
             contentPadding = PaddingValues(16.dp),
             reverseLayout = false
         ) {
-            // رندر پیام‌ها
             items(messages, key = { it.id }) { message ->
                 Column(modifier = Modifier.fillMaxWidth()) {
                     if (message.text.isNotBlank() || message.isStreaming || message.statusMessage != null) {
@@ -203,8 +203,6 @@ fun ChatSection(
                     }
                 }
             }
-
-            // لودینگ اولیه
             if (internetUiState.isInitialLoading && messages.isNotEmpty()) {
                 item {
                     Box(
@@ -216,7 +214,6 @@ fun ChatSection(
                 }
             }
 
-            // ارور شبکه
             if (internetUiState.isError) {
                 item {
                     ErrorScreen(modifier = Modifier.fillMaxWidth())
@@ -224,7 +221,6 @@ fun ChatSection(
             }
         }
 
-        // ۲. باکس ورودی متن (چسبیده به انتهای صفحه)
         Surface(
             modifier = Modifier.fillMaxWidth(),
             tonalElevation = 5.dp,
@@ -234,7 +230,6 @@ fun ChatSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // 🟢 پدینگ اضافی نویگیشن‌بار حذف شد تا فاصله سفید پایین از بین برود
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -329,11 +324,9 @@ fun ChatBubble(message: ChatMessage) {
     )
 
     val finalAnnotatedText = buildAnnotatedString {
-        // 🟢 اصلاح اصلی: استفاده از متد مناسب برای تزریق یک AnnotatedString دیگر
         val parsedMarkdown = parseMarkdownToAnnotatedString(message.text)
         append(parsedMarkdown)
 
-        // نمایش نشانگر چشمک‌زن
         if (message.isStreaming && message.text.isNotEmpty()) {
             pushStyle(MaterialTheme.typography.bodyLarge.toSpanStyle().copy(
                 color = textColor.copy(alpha = cursorAlpha)
@@ -357,7 +350,7 @@ fun ChatBubble(message: ChatMessage) {
                     text = message.statusMessage,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(50.dp)
+                    modifier = Modifier.widthIn(min = 50.dp, max = 150.dp)
                 )
             }
         }
@@ -463,7 +456,7 @@ fun ProductCard(
                         Surface(
                             modifier = Modifier
                                 .padding(8.dp)
-                                .align(Alignment.TopStart), // تنظیم دقیق در بالا چپ تصویر
+                                .align(Alignment.TopStart),
                             color = if (item.product.llmGuide == "recommended") Color(0xFF4CAF50) else Color(0xFFFF9800), // سبز برای پیشنهادی، نارنجی برای بهترین
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -479,14 +472,8 @@ fun ProductCard(
 
             }
 
-
-
-            // 1. Create a state to control whether the marquee is running
             var runMarquee by remember(item.product.id) { mutableStateOf(true) }
-
-// 2. Automatically turn off the marquee after it has had time to run once
             LaunchedEffect(item.product.id) {
-                // 1200ms initial delay + 3500ms scrolling time = 4.7 seconds total
                 delay(4700)
                 runMarquee = false
             }
@@ -501,7 +488,6 @@ fun ProductCard(
                 text = productTitle.ifBlank { "Unknown Product" },
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 16.dp)
-                    // 3. ONLY apply marquee if it's running AND the card is collapsed
                     .then(
                         if (runMarquee && !item.isExpanded) {
                             Modifier.basicMarquee(
@@ -510,7 +496,7 @@ fun ProductCard(
                                 velocity = 40.dp
                             )
                         } else {
-                            Modifier // Empty modifier when stopped or expanded
+                            Modifier
                         }
                     ),
                 style = MaterialTheme.typography.titleMedium,
@@ -546,14 +532,13 @@ fun ProductCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp), // Matched horizontal padding to 16.dp for perfect alignment
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start
             ) {
                 Text(
                     text = item.product.price?.toString() ?: "0",
                     modifier = Modifier.weight(1f),
-                    // FIXED: Changed headlineSmall to bodyMedium so long strikethrough prices don't crowd out the button
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color.Gray,
                         textDecoration = TextDecoration.LineThrough
@@ -569,9 +554,9 @@ fun ProductCard(
             if (item.isExpanded) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center, // Centered counter controls layout cleanly
+                    horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
-                        .fillMaxWidth() // Fills card width evenly when expanded
+                        .fillMaxWidth() 
                         .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ) {
                     IconButton(
@@ -593,7 +578,6 @@ fun ProductCard(
 
                     Text(
                         text = item.count.toString(),
-                        // FIXED: Replaced hardcoded 24.sp with Material style for reliable system font scaling
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.Red,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -638,26 +622,22 @@ private fun ProductButton(
 
 fun parseMarkdownToAnnotatedString(text: String): AnnotatedString {
     return buildAnnotatedString {
-        // این ریجکس بخش‌های بولد (**...**) و ایتالیک (*...*) را تفکیک می‌کند
         val regex = Regex("(\\*\\*.*?\\*\\*|\\*.*?\\*)")
         val matches = regex.findAll(text)
 
         var currentIndex = 0
 
         for (match in matches) {
-            // متن‌های معمولی قبل از رسیدن به ستاره‌ها
             append(text.substring(currentIndex, match.range.first))
 
             val matchValue = match.value
             when {
-                // اگر متن با دو ستاره شروع شده باشد -> Bold
                 matchValue.startsWith("**") -> {
                     val innerText = matchValue.removeSurrounding("**")
                     pushStyle(SpanStyle(fontWeight = FontWeight.Bold))
                     append(innerText)
                     pop()
                 }
-                // اگر متن با یک ستاره شروع شده باشد -> Italic
                 matchValue.startsWith("*") -> {
                     val innerText = matchValue.removeSurrounding("*")
                     pushStyle(SpanStyle(fontStyle = FontStyle.Italic))
@@ -668,7 +648,6 @@ fun parseMarkdownToAnnotatedString(text: String): AnnotatedString {
             currentIndex = match.range.last + 1
         }
 
-        // اضافه کردن باقی‌مانده متن بعد از آخرین ستاره
         if (currentIndex < text.length) {
             append(text.substring(currentIndex))
         }
