@@ -97,37 +97,14 @@ fun ProductsScreen(contentPadding: PaddingValues,
                    onCheckoutClick: () -> Unit
 ) {
 
-    /*LaunchedEffect(Unit) {
-        productsViewModel.searchProducts("")
-    }*/
     val chatMessages by productsViewModel.chatMessages.collectAsState()
-    //var searchText by remember { mutableStateOf("") }
     val internetUiState by productsViewModel.internetUiState.collectAsState()
-    //val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(modifier = Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding()),) {
-       /* // Search Bar Setup
-        OutlinedTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            label = { Text("Search Products") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    productsViewModel.searchProducts(searchText)
-                    keyboardController?.hide() // FIX 2: Closes keyboard automatically on search click
-                }
-            ),
-            singleLine = true
-        )*/
         ChatSection(
             messages = chatMessages,
             internetUiState = internetUiState,
             productsViewModel = productsViewModel,
-            //retryAction = retryAction,
             onSendMessage = { query ->
                 productsViewModel.sendMessageToAi(query)
             },
@@ -135,39 +112,8 @@ fun ProductsScreen(contentPadding: PaddingValues,
             modifier = Modifier.weight(1f),
             onCheckoutClick = onCheckoutClick
         )
-
-        // 4. Render the state below the search bar
-        /*Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            when (val state = internetUiState) {
-                is InternetUiState.Loading -> LoadingScreen()
-                is InternetUiState.Error -> ErrorScreen(//retryAction = retryAction
-                )
-                is InternetUiState.Success -> ResultScreen(
-                    products = state.items,
-                    productsViewModel = productsViewModel,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }*/
     }
 }
-
-    /*when (val state = internetUiState) {
-        is InternetUiState.Loading -> LoadingScreen(modifier = Modifier.fillMaxWidth())
-        is InternetUiState.Error -> ErrorScreen(retryAction,modifier = Modifier.fillMaxWidth())
-        is InternetUiState.Success -> ResultScreen(
-                products = state.items,
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                contentPadding = contentPadding,
-                productsViewModel = productsViewModel
-        )
-    }
-}*/
 
 @Composable
 fun LoadingScreen(modifier: Modifier = Modifier) {
@@ -196,44 +142,8 @@ fun ErrorScreen(
             text = "Failed to load",
             modifier = Modifier.padding(16.dp)
         )
-        /*Button(onClick = retryAction) {
-            Text("Retry")
-        }*/
     }
 }
-@Composable
-fun ResultScreen(
-    productsViewModel: ProductsViewModel,
-    products: Map<String, List<InternetProductsItemState>>,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-    ) {
-        products.forEach { (categoryName, productsInCategory) ->
-
-            item(key = categoryName) {
-                Text(
-                    text = categoryName,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            item {
-                ProductList(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    products = productsInCategory,
-                    onCountChange = { id, count -> productsViewModel.updateInternetCount(id, count) },
-                    onExpandToggle = { id -> productsViewModel.toggleInternetExpand(id) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
-
 
 @Composable
 fun ChatSection(
