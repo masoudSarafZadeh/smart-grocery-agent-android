@@ -22,20 +22,18 @@ import com.example.productlistview.ui.screens.products.ProductsViewModel
 @Composable
 fun InvoiceScreen(
     contentPadding: PaddingValues,
-    productsViewModel: ProductsViewModel, // 🟢 دریافت ویومدل مشترک
+    productsViewModel: ProductsViewModel,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val messages by productsViewModel.chatMessages.collectAsState()
 
-    // 🟢 استخراج آنی و سریع کالاها از حافظه بدون نیاز به JSON یا دکد کردن
     val selectedProducts = remember(messages) {
         messages.flatMap { it.products.values.flatten().filter { it.count > 0 } }
     }
 
-    // محاسبه قیمت کل فاکتور
     val totalPrice = remember(selectedProducts) {
-        selectedProducts.sumOf { it.count * (it. product.priceAfterOff ?: 0) }
+        selectedProducts.sumOf { it.count * (it.product.priceAfterOff ?: 0) }
     }
 
     Column(
@@ -44,10 +42,8 @@ fun InvoiceScreen(
             .padding(contentPadding)
             .padding(16.dp)
     ) {
-        // ساخت UI فاکتور شما...
         Text(text = "لیست خرید شما", style = MaterialTheme.typography.headlineMedium)
 
-        // نمایش آیتم‌ها در لایه لیست
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(selectedProducts) { item ->
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
