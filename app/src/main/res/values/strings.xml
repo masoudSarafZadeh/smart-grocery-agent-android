@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">OK market</string>
+    <string name="rate">4.6</string>
+    <string name="off_percent">25%</string>
+    <string name="product_name">Khoram</string>
+    <string name="price">99.900</string>
+    <string name="off_price">81.500</string>
+
+</resources>
