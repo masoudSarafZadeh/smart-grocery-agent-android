@@ -20,15 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.productlistview.ui.screens.introduce.IntroduceScreen
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.productlistview.R
-import com.example.productlistview.ui.screens.products.ProductsScreen
+import com.example.productlistview.ui.screens.introduce.IntroduceScreen
 import com.example.productlistview.ui.screens.invoice.InvoiceScreen
+import com.example.productlistview.ui.screens.products.ProductsScreen
 import com.example.productlistview.ui.screens.products.ProductsViewModel
 
 enum class AllScreens() {
@@ -70,11 +70,9 @@ fun ProductApp(
                     ProductsScreen(
                         contentPadding = innerPadding,
                         productsViewModel = productsViewModel,
-                        // 🟢 3. Use the onCheckoutClick lambda we built to handle navigation
                         onCheckoutClick = {
                             navController.navigate(AllScreens.InvoiceScreen.name)
                         }
-                        //retryAction = productsViewModel::getSupabasePhotos
                     )
                 }
                 composable(route = AllScreens.InvoiceScreen.name) {
@@ -82,7 +80,7 @@ fun ProductApp(
                         contentPadding = innerPadding,
                         productsViewModel = productsViewModel,
                         onBackClick = {
-                            navController.popBackStack() // Smooth navigation back to the chat room
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -97,7 +95,6 @@ fun ProductApp(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OKTopAppBar(currentScreen: AllScreens, modifier: Modifier = Modifier) {
-    // You can customize the top app bar dynamically for different screens here!
     if (currentScreen == AllScreens.ProductsScreen || currentScreen == AllScreens.InvoiceScreen) {
         CenterAlignedTopAppBar(
             title = {
