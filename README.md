@@ -126,6 +126,6 @@ Android + AI Developer
 
 * **Phone:** +98 933 118 4568
 
-* **Telegram/Socials:** @masoudSaraf
+* **Telegram/Socials:** @MasoudSarafZadeh
 
 * **Email:** masoudsarafzadeh@gmail.com
