@@ -1,4 +1,9 @@
 # smart-grocery-agent-android
+<div align="center">
+  <video src="demo.mp4" width="320" autoplay loop muted></video>
+  <p><i>Real-time AI streaming and dynamic cart management demo.</i></p>
+</div>
+
 AI-Powered Shopping Agent
 This App is an advanced Android application that integrates an AI Shopping Agent capable of understanding user requests in real-time, fetching product recommendations from a backend data source, and managing an interactive shopping cart.
 
