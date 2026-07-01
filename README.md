@@ -1,6 +1,8 @@
 # smart-grocery-agent-android
 <div align="center">
-  <video src="demo.mp4" width="320" autoplay loop muted></video>
+  <video src="https://github.com/user-attachments/assets/3f81b3ae-4bbe-46a9-bed3-b59271e21a88" width="320" autoplay loop muted></video>
+</div>
+<div align="center">
   <p><i>Real-time AI streaming and dynamic cart management demo.</i></p>
 </div>
 
